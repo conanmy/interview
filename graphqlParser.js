@@ -1,17 +1,35 @@
 function parse(inputQuery) {
-    let lines = inputQuery.split('\n');
-    let type = lines[0].replace(/(\w+) \{/, function(input, type) {
-        return type;
+    let lines = typeof inputQuery === 'string' ? inputQuery.split('\n') : inputQuery;
+    let type, dataStr;
+    lines[0].replace(/(\w+)(\(.+\)):?\s?\{/, function(input, sType, sDataStr) {
+        type = sType;
+        dataStr = sDataStr.trim();
+    });
+    let data = dataStr.split(',').map(seg => {
+        let [key, value] = seg.split(':');
+        return {key: value};
     });
     lines.shift();
     lines.pop();
-    lines = lines.map(function(line) {
-        return ltrim(line).replace(',', '');
-    });
-    return {type, fields: lines};
-}
-
-function ltrim(str) {
-    if(str == null) return str;
-    return str.replace(/^\s+/g, '');
+    let fields = [];
+    let relations = [];
+    let relationLineStartIndex = null;
+    let i = 0;
+    while (i < lines.length) {
+        if (lines[i].indexOf('{') > 0) {
+            relationLineStartIndex = i;
+            i ++;
+        } else if (lines[i].indexOf('}') > 0) {
+            let relationLines = lines.slice(relationLineStartIndex, i + 1);
+            relations.push(parse(relationLines));
+            relationLineStartIndex = null;
+            i++;
+        } else if (relationLineStartIndex) {
+            i ++;
+        } else {
+            fields.push(lines[i].trim().replace(',', ''));
+            i++;
+        }
+    };
+    return {type, fields, attrs: { data }, relations};
 }
