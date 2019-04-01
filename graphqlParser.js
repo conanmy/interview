@@ -1,6 +1,17 @@
 function parse(inputQuery) {
-    let queryRegex = /^(\w+)\{(\w+,)*\}$/;
-    return inputQuery.replace(queryRegex, function(input, type, ...fields) {
-        return { type, fields };
+    let lines = inputQuery.split('\n');
+    let type = lines[0].replace(/(\w+) \{/, function(input, type) {
+        return type;
     });
+    lines.shift();
+    lines.pop();
+    lines = lines.map(function(line) {
+        return ltrim(line).replace(',', '');
+    });
+    return {type, fields: lines};
+}
+
+function ltrim(str) {
+    if(str == null) return str;
+    return str.replace(/^\s+/g, '');
 }
